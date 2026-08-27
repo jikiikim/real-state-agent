@@ -32,7 +32,11 @@ export function PropertyRecommendationPanel({
         const res = await fetch(`/api/property-recommendation?region=${encodeURIComponent(selectedRegion)}`);
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? "매물 추천 데이터를 불러오지 못했습니다.");
-        if (!cancelled) setData(body as PropertyRecommendation);
+        const result = body as PropertyRecommendation;
+        if (!cancelled) {
+          setData(result);
+          setSelectedAptSeq(result.topApartments[0]?.aptSeq ?? null);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
       } finally {

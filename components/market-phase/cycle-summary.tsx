@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { CycleOverview, CyclePhase } from "@/lib/market-phase";
-import { CYCLE_BASE_COLORS, CYCLE_LABELS, CYCLE_SUMMARIES } from "./cycle-labels";
+import { CYCLE_AREA_COLORS, CYCLE_BASE_COLORS, CYCLE_LABELS, CYCLE_SUMMARIES } from "./cycle-labels";
 
 const ALL_PHASES: CyclePhase[] = [1, 2, 3, 4];
 
@@ -16,6 +16,7 @@ export function CycleSummary({ cycle }: { cycle: CycleOverview }) {
             "flex flex-col gap-1 rounded-md border p-3",
             phase === currentPhase && "border-foreground"
           )}
+          style={{ backgroundColor: CYCLE_AREA_COLORS[phase] }}
         >
           <div className="flex items-center gap-2">
             <span

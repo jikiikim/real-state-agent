@@ -18,84 +18,89 @@ function series(dates: string[], values: number[]): IndexPoint[] {
 }
 
 describe("computeCycle", () => {
-  it("크로스가 한 번도 없으면 구간이 비어 있다", () => {
+  it("데이터 시작 시점에 전세가 매매보다 높으면 크로스 없이도 1단계로 바로 시작한다", () => {
     const dates = weeklyDates(10);
     const sale = series(dates, dates.map(() => 90));
     const jeonse = series(dates, dates.map(() => 100));
 
     const result = computeCycle(sale, jeonse);
 
-    expect(result.segments).toEqual([]);
+    expect(result.segments.length).toBeGreaterThan(0);
+    expect(result.segments[0].phase).toBe(1);
+    // 국면 계산이 가능한 첫 시점(index 4, weeks=4)부터 바로 1단계다.
+    expect(result.segments[0].startDate).toBe(dates[4]);
   });
 
-  it("골든크로스 이후 매매·전세가 둘 다 잠잠하면 2단계를 유지한다(3단계로 넘어가지 않는다)", () => {
+  it("데이터 시작 시점에 매매가 전세보다 높거나 같으면 크로스 없이도 2단계로 바로 시작한다", () => {
+    const dates = weeklyDates(10);
+    const sale = series(dates, dates.map(() => 105));
+    const jeonse = series(dates, dates.map(() => 100));
+
+    const result = computeCycle(sale, jeonse);
+
+    expect(result.segments[0].phase).toBe(2);
+  });
+
+  it("골든크로스 이후 갭이 작으면 2단계를 유지한다(3단계로 넘어가지 않는다)", () => {
     const dates = weeklyDates(20);
     const saleValues = [
-      99.5, 99.5, 99.5, 99.5, 99.5, 99.5, // 0~5: 매매 < 전세
-      100.3, // 6: 골든크로스
-      ...Array(13).fill(100.3), // 7~19: 매매도 전세도 변동 없음
+      99.9, 99.9, 99.9, 99.9, 99.9, 99.9, // 0~5: 매매 < 전세
+      100.05, // 6: 골든크로스(아주 미세하게)
+      ...Array(13).fill(100.05), // 7~19: 매매도 전세도 변동 없음(갭 없음)
     ];
     const sale = series(dates, saleValues);
     const jeonse = series(dates, dates.map(() => 100));
 
     const result = computeCycle(sale, jeonse);
 
-    expect(result.segments.map((s) => s.phase)).toEqual([2]);
-    expect(result.segments[0].startDate).toBe(dates[6]);
+    expect(result.segments.map((s) => s.phase)).toEqual([1, 2]);
   });
 
-  it("골든크로스 이후 매매만 오르고 전세가 함께 오르면(전세가 꺾이지 않으면) 3단계로 넘어가지 않는다", () => {
-    const dates = weeklyDates(20);
+  it("2단계에서 갭 없이 매매가 바로 꺾이면 3단계를 거치지 않고 곧바로 4단계로 간다", () => {
+    const dates = weeklyDates(25);
     const saleValues = [
-      99.5, 99.5, 99.5, 99.5, 99.5, 99.5,
-      100.3,
-      101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, // 매매 계속 상승
-    ];
-    const jeonseValues = [
-      100, 100, 100, 100, 100, 100,
-      100,
-      100.5, 101, 101.5, 102, 102.5, 103, 103.5, 104, 104.5, 105, 105.5, 106, 106.5, // 전세도 같이 상승
+      99.9, 99.9, 99.9, 99.9, 99.9, 99.9, // 0~5: 매매 < 전세
+      100.05, // 6: 골든크로스(아주 미세하게)
+      100.05, 100.05, 100.05, 100.05, 100.05, 100.05, 100.05, 100.05, // 7~14: 2단계 완전히 안정화
+      98, 95, 90, 85, 80, 74, 68, 62, 56, 50, // 15~24: 매매 급락
     ];
     const sale = series(dates, saleValues);
-    const jeonse = series(dates, jeonseValues);
+    const jeonse = series(dates, dates.map(() => 100));
 
     const result = computeCycle(sale, jeonse);
+    const phases = result.segments.map((s) => s.phase);
 
-    expect(result.segments.map((s) => s.phase)).toEqual([2]);
+    expect(phases).not.toContain(3);
+    expect(phases).toContain(4);
   });
 
-  it("전체 사이클(2→3→4→1)이 순서대로만 나타난다", () => {
-    const dates = weeklyDates(40);
+  it("전체 사이클(2→3→4→1)이 갭 확대 기준으로 순서대로만 나타난다", () => {
+    const dates = weeklyDates(34);
     const saleValues = [
-      99.5, 99.5, 99.5, 99.5, 99.5, 99.5, // 0~5: 매매 < 전세
-      100.3, // 6: 골든크로스
-      ...Array(13).fill(100.3), // 7~19: 2단계 유지(변동 없음)
-      101, 102, 103, 104, 105, 106, 107, 108, 109, 110, // 20~29: 매매 계속 상승(고공행진)
-      109, 107, 105, 103, 101, 98, 95, 92, 88, 80, // 30~39: 매매 하락 전환 후 계속 하락, 결국 전세 아래로
-    ];
-    const jeonseValues = [
-      100, 100, 100, 100, 100, 100,
-      100,
-      ...Array(13).fill(100), // 2단계 구간: 전세도 변동 없음
-      99, 98, 97, 96, 95, 94, 93, 92, 91, 90, // 20~29: 전세 하락(꺾임) — 매매 상승과 겹쳐 3단계 진입 조건
-      90, 90, 90, 90, 90, 90, 90, 90, 90, 90, // 30~39: 전세는 안정
+      99.9, 99.9, 99.9, 99.9, 99.9, 99.9, // 0~5: 매매 < 전세
+      100.05, // 6: 골든크로스(아주 미세하게)
+      100.05, 100.05, 100.05, 100.05, 100.05, 100.05, 100.05, // 7~13: 2단계 완전히 안정화
+      101, 102, 103, 104, 105, 106, 107, 108, 109, 110, // 14~23: 매매 급등(갭 확대 → 3단계)
+      109, 107, 105, 103, 101, 98, 95, 92, 88, 80, // 24~33: 매매 하락 전환 후 계속 하락, 전세 아래로
     ];
     const sale = series(dates, saleValues);
-    const jeonse = series(dates, jeonseValues);
+    const jeonse = series(dates, dates.map(() => 100));
 
     const result = computeCycle(sale, jeonse);
     const phaseOrder = result.segments.map((s) => s.phase);
 
-    expect(phaseOrder[0]).toBe(2);
+    expect(phaseOrder[0]).toBe(1);
+    expect(phaseOrder).toContain(2);
     expect(phaseOrder).toContain(3);
     expect(phaseOrder).toContain(4);
     expect(phaseOrder[phaseOrder.length - 1]).toBe(1);
 
-    // 각 단계는 순서를 거스르지 않는다(2 -> 3 -> 4 -> 1이고, 역행하거나 건너뛰지 않는다).
     const firstOf = (p: 1 | 2 | 3 | 4) => phaseOrder.indexOf(p);
+    const lastOf = (p: 1 | 2 | 3 | 4) => phaseOrder.lastIndexOf(p);
+    expect(firstOf(1)).toBeLessThan(firstOf(2));
     expect(firstOf(2)).toBeLessThan(firstOf(3));
     expect(firstOf(3)).toBeLessThan(firstOf(4));
-    expect(firstOf(4)).toBeLessThan(phaseOrder.lastIndexOf(1));
+    expect(firstOf(4)).toBeLessThan(lastOf(1));
 
     // 연속된 두 세그먼트는 항상 정확히 하나씩만 다음 단계로 넘어간다(끼어드는 단계가 없다).
     for (let i = 1; i < phaseOrder.length; i++) {
@@ -106,14 +111,13 @@ describe("computeCycle", () => {
     }
   });
 
-  it("데이터가 너무 짧아 4주 누적을 계산할 수 없으면 2단계에서 더 진행하지 않는다", () => {
-    const dates = weeklyDates(8);
-    const saleValues = [99.5, 99.5, 99.5, 100.3, 105, 108, 110, 112];
-    const sale = series(dates, saleValues);
-    const jeonse = series(dates, dates.map(() => 100));
+  it("데이터가 너무 짧아 4주 누적을 계산할 수 없으면 구간이 비어 있다", () => {
+    const dates = weeklyDates(3);
+    const sale = series(dates, [90, 91, 92]);
+    const jeonse = series(dates, [100, 100, 100]);
 
     const result = computeCycle(sale, jeonse);
 
-    expect(result.segments.every((s) => s.phase === 2)).toBe(true);
+    expect(result.segments).toEqual([]);
   });
 });

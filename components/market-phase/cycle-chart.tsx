@@ -10,7 +10,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { mergeSaleJeonseSeries, type CycleOverview } from "@/lib/market-phase";
-import { CYCLE_AREA_COLORS, CYCLE_SHORT_LABELS, JEONSE_LINE_COLOR, SALE_LINE_COLOR } from "./cycle-labels";
+import { CYCLE_AREA_COLORS, CYCLE_BASE_COLORS, CYCLE_SHORT_LABELS, JEONSE_LINE_COLOR, SALE_LINE_COLOR } from "./cycle-labels";
 
 const chartConfig = {
   sale: { label: "매매지수", color: SALE_LINE_COLOR },
@@ -39,7 +39,12 @@ export function CycleChart({ cycle }: { cycle: CycleOverview }) {
             stroke="none"
             ifOverflow="hidden"
           >
-            <Label value={CYCLE_SHORT_LABELS[segment.phase]} position="insideTop" fontSize={11} fill="currentColor" />
+            <Label
+              value={CYCLE_SHORT_LABELS[segment.phase]}
+              position="insideTop"
+              fontSize={11}
+              fill={CYCLE_BASE_COLORS[segment.phase]}
+            />
           </ReferenceArea>
         ))}
         <ChartTooltip content={<ChartTooltipContent />} />

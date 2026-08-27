@@ -53,7 +53,7 @@ export function PropertyRecommendationPanel({
       <CardHeader>
         <CardTitle>{tierLabel} 매물 추천</CardTitle>
         <CardDescription>
-          지역을 선택하면 전용 84㎡ 대장아파트와, 전세가·매매가·거래량 조건을 만족하는 Top 10 아파트를 보여줍니다.
+          지역을 선택하면 전용 84㎡ 대장아파트와, 전세가·매매가·거래량 조건을 만족하는 Top 10 아파트를 보여줍니다. 아래 아파트를 클릭하세요!
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">

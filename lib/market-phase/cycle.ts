@@ -93,7 +93,6 @@ export function computeCycle(
     if (saleRoll === null) continue;
 
     const saleAtOrAboveJeonse = merged[i].sale >= merged[i].jeonse;
-    const prevDate = i > 0 ? merged[i - 1].date : date;
 
     if (currentPhase === null) {
       // 국면 판단이 처음 가능한 시점: 크로스 없이도 그 시점의 크기 비교로 초기 단계를 정한다.
@@ -101,23 +100,25 @@ export function computeCycle(
       segmentStart = date;
     } else if ((currentPhase === 2 || currentPhase === 3) && classifyPhase(saleRoll) === "하락") {
       // 매매가 꺾이는 것을 최우선으로 본다. 2·3단계 어디에 있든 즉시 4단계로 전환한다.
-      closeSegment(prevDate);
+      // 이전 구간의 끝을 전환일(date)로 잡아 다음 구간의 시작과 겹치게 해서
+      // 그래프 배경 블록 사이에 빈틈이 생기지 않게 한다.
+      closeSegment(date);
       currentPhase = 4;
       segmentStart = date;
     } else if (currentPhase === 4 && !saleAtOrAboveJeonse) {
       // 데드크로스
-      closeSegment(prevDate);
+      closeSegment(date);
       currentPhase = 1;
       segmentStart = date;
     } else if (currentPhase === 1 && saleAtOrAboveJeonse) {
       // 골든크로스
-      closeSegment(prevDate);
+      closeSegment(date);
       currentPhase = 2;
       segmentStart = date;
     } else if (currentPhase === 2) {
       const jeonseRoll = computeRollingWeeklyChangeRate(commonJeonse.slice(0, i + 1), weeks);
       if (jeonseRoll !== null && saleRoll - jeonseRoll >= GAP_EXPANSION_THRESHOLD_PP) {
-        closeSegment(prevDate);
+        closeSegment(date);
         currentPhase = 3;
         segmentStart = date;
       }

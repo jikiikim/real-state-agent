@@ -12,6 +12,7 @@ import {
   type IndexPoint,
 } from "./phase";
 import { detectBalloonTransitions, type TierRisingTransition } from "./balloon-effect";
+import { computeCycle, type CycleSegment } from "./cycle";
 
 export interface IndexOverview {
   /** 최근 4주 데이터가 부족하면 국면을 판단할 수 없어 null이다 */
@@ -19,6 +20,12 @@ export interface IndexOverview {
   weeklyChangeRatePercent: number | null;
   monthlyChangeRates: MonthlyChangeRate[];
   recentWeeklySeries: IndexPoint[];
+}
+
+export interface CycleOverview {
+  saleSeries: IndexPoint[];
+  jeonseSeries: IndexPoint[];
+  segments: CycleSegment[];
 }
 
 export interface TierMarketOverview {
@@ -29,9 +36,12 @@ export interface TierMarketOverview {
   jeonse: IndexOverview;
   /** 상급지 상승 전환 후 4주 이내에 이 급지도 상승 전환됐는지(매매 기준) */
   isBalloonTransitioning: boolean;
+  cycle: CycleOverview;
 }
 
 const RECENT_WEEKLY_POINTS = 16;
+/** 매매/전세 사이클 그래프에 쓸 최근 기간(3년 ≈ 156주) */
+const CYCLE_CHART_WEEKS = 156;
 
 function buildIndexOverview(series: IndexPoint[]): { overview: IndexOverview; risingTransitionDate: string | null } {
   const weeklyChangeRatePercent = computeRollingWeeklyChangeRate(series);
@@ -69,6 +79,10 @@ export async function getTierMarketOverview(): Promise<TierMarketOverview[]> {
       const sale = buildIndexOverview(saleSeries);
       const jeonse = buildIndexOverview(jeonseSeries);
 
+      const cycleSaleSeries = saleSeries.slice(-CYCLE_CHART_WEEKS);
+      const cycleJeonseSeries = jeonseSeries.slice(-CYCLE_CHART_WEEKS);
+      const { segments } = computeCycle(cycleSaleSeries, cycleJeonseSeries);
+
       return {
         tier: tierDef.tier,
         label: tierDef.label,
@@ -76,6 +90,11 @@ export async function getTierMarketOverview(): Promise<TierMarketOverview[]> {
         sale: sale.overview,
         jeonse: jeonse.overview,
         risingTransitionDate: sale.risingTransitionDate,
+        cycle: {
+          saleSeries: cycleSaleSeries,
+          jeonseSeries: cycleJeonseSeries,
+          segments,
+        } satisfies CycleOverview,
       };
     })
   );
@@ -86,12 +105,13 @@ export async function getTierMarketOverview(): Promise<TierMarketOverview[]> {
   }));
   const balloonTiers = detectBalloonTransitions(transitions);
 
-  return perTier.map(({ tier, label, regionNames, sale, jeonse }) => ({
+  return perTier.map(({ tier, label, regionNames, sale, jeonse, cycle }) => ({
     tier,
     label,
     regionNames,
     sale,
     jeonse,
     isBalloonTransitioning: balloonTiers.has(tier),
+    cycle,
   }));
 }

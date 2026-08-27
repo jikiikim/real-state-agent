@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "급지별 국면 판단 대시보드",
+  title: "부동산 시장 현황",
   description: "서울·수도권 급지별 매매·전세지수로 시장 국면을 판단하는 대시보드",
 };
 

@@ -11,8 +11,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TierMarketOverview } from "@/lib/market-phase";
 import { PhaseBadge } from "./phase-badge";
-import { MonthlyHeatmap } from "./monthly-heatmap";
-import { WeeklyTrend } from "./weekly-trend";
+import { IndexDetailPanel } from "./index-detail-panel";
+import { CycleChart } from "./cycle-chart";
+import { CycleSummary } from "./cycle-summary";
 
 function TierSummaryCard({ overview }: { overview: TierMarketOverview }) {
   return (
@@ -40,37 +41,31 @@ function TierSummaryCard({ overview }: { overview: TierMarketOverview }) {
 
 function TierDetail({ overview }: { overview: TierMarketOverview }) {
   return (
-    <div className="flex flex-col gap-6">
-      {(
-        [
-          { label: "매매", data: overview.sale },
-          { label: "전세", data: overview.jeonse },
-        ] as const
-      ).map(({ label, data }) => (
-        <Card key={label}>
+    <Tabs defaultValue="cycle">
+      <TabsList>
+        <TabsTrigger value="cycle">매매/전세 가격변동</TabsTrigger>
+        <TabsTrigger value="sale">매매</TabsTrigger>
+        <TabsTrigger value="jeonse">전세</TabsTrigger>
+      </TabsList>
+      <TabsContent value="cycle">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {overview.label} {label}
-              <PhaseBadge phase={data.weeklyPhase} />
-            </CardTitle>
-            <CardDescription>
-              최근 4주 누적 증감률{" "}
-              {data.weeklyChangeRatePercent !== null ? `${data.weeklyChangeRatePercent.toFixed(3)}%` : "데이터 부족"}
-            </CardDescription>
+            <CardTitle>{overview.label} 매매/전세 가격변동</CardTitle>
+            <CardDescription>최근 3년 주간 지수와 시장 사이클 4단계</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            <div>
-              <h4 className="mb-2 text-sm font-medium">월간 흐름 (전월대비 증감률)</h4>
-              <MonthlyHeatmap monthlyChangeRates={data.monthlyChangeRates} />
-            </div>
-            <div>
-              <h4 className="mb-2 text-sm font-medium">최근 주간 추이</h4>
-              <WeeklyTrend series={data.recentWeeklySeries} />
-            </div>
+            <CycleChart cycle={overview.cycle} />
+            <CycleSummary cycle={overview.cycle} />
           </CardContent>
         </Card>
-      ))}
-    </div>
+      </TabsContent>
+      <TabsContent value="sale">
+        <IndexDetailPanel tierLabel={overview.label} indexLabel="매매" data={overview.sale} />
+      </TabsContent>
+      <TabsContent value="jeonse">
+        <IndexDetailPanel tierLabel={overview.label} indexLabel="전세" data={overview.jeonse} />
+      </TabsContent>
+    </Tabs>
   );
 }
 

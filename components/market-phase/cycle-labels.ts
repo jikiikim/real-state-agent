@@ -26,18 +26,21 @@ export const CYCLE_SUMMARIES: Record<CyclePhase, string> = {
 export const SALE_LINE_COLOR = "#6366f1"; // indigo-500
 export const JEONSE_LINE_COLOR = "#f59e0b"; // amber-500
 
-/** 각 단계의 기준색(불투명). ReferenceArea fill과 요약 카드 도트는 이 색에서 파생시킨다. */
+/**
+ * 각 단계의 기준색(불투명). ReferenceArea fill과 요약 카드 도트는 이 색에서 파생시킨다.
+ * 색상환에서 서로 최대한 떨어뜨려 인접 단계(특히 1·2단계)도 한눈에 구별되게 한다.
+ */
 export const CYCLE_BASE_COLORS: Record<CyclePhase, string> = {
-  1: "rgb(148, 163, 184)", // slate — 전세 상승(관망)
-  2: "rgb(59, 130, 246)", // blue — 매매 전환(초입)
-  3: "rgb(239, 68, 68)", // red — 매매 폭등(과열)
-  4: "rgb(16, 185, 129)", // emerald — 시장 조정
+  1: "rgb(168, 85, 247)", // violet — 전세 상승(관망)
+  2: "rgb(37, 99, 235)", // blue — 매매 전환(초입)
+  3: "rgb(220, 38, 38)", // red — 매매 폭등(과열)
+  4: "rgb(5, 150, 105)", // emerald — 시장 조정
 };
 
-/** ReferenceArea fill 색상(라이트/다크 모두에서 무난하도록 낮은 불투명도) */
+/** ReferenceArea fill 색상(라이트/다크 모두에서 무난하되 배경 위에서도 뚜렷하도록) */
 export const CYCLE_AREA_COLORS: Record<CyclePhase, string> = {
-  1: "rgb(148 163 184 / 0.18)",
-  2: "rgb(59 130 246 / 0.16)",
-  3: "rgb(239 68 68 / 0.16)",
-  4: "rgb(16 185 129 / 0.18)",
+  1: "rgb(168 85 247 / 0.22)",
+  2: "rgb(37 99 235 / 0.22)",
+  3: "rgb(220 38 38 / 0.2)",
+  4: "rgb(5 150 105 / 0.22)",
 };

@@ -3,9 +3,9 @@ import { expect, test } from "@playwright/test";
 test("대시보드가 열리고 급지별 국면이 표시된다", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page).toHaveTitle("급지별 국면 판단 대시보드");
+  await expect(page).toHaveTitle("부동산 시장 현황");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "급지별 국면 판단 대시보드"
+    "부동산 시장 현황"
   );
   await expect(page.getByText("1급지").first()).toBeVisible();
   await expect(page.getByText("6급지 이하").first()).toBeVisible();

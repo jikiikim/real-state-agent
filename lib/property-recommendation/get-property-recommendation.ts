@@ -18,7 +18,7 @@ function currentYearMonth(): string {
 }
 
 /**
- * 지역 하나를 선택했을 때 대장아파트 + 추천 Top 10을 계산한다.
+ * 지역 하나를 선택했을 때 대장아파트 + 추천 Top 30을 계산한다.
  * app/api/property-recommendation/route.ts가 이 함수를 호출한다.
  */
 export async function getPropertyRecommendation(regionName: string): Promise<PropertyRecommendation> {

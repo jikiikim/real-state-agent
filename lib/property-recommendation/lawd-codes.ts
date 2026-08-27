@@ -49,3 +49,12 @@ export const LAWD_CODES: Record<string, string[]> = {
 export function getLawdCodes(regionName: string): string[] {
   return LAWD_CODES[regionName] ?? [];
 }
+
+const REGION_NAME_BY_LAWD_CODE: Record<string, string> = Object.fromEntries(
+  Object.entries(LAWD_CODES).flatMap(([regionName, codes]) => codes.map((code) => [code, regionName]))
+);
+
+/** 법정동코드(5자리)로 지역명을 역조회한다(단지식별 API 매칭에 쓴다). */
+export function getRegionNameByLawdCode(lawdCode: string): string | null {
+  return REGION_NAME_BY_LAWD_CODE[lawdCode] ?? null;
+}

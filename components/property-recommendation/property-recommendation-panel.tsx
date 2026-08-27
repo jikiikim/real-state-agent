@@ -91,6 +91,7 @@ export function PropertyRecommendationPanel({
             )}
 
             <ApartmentTopList
+              key={selectedRegion}
               apartments={data.topApartments}
               selectedAptSeq={selectedAptSeq}
               onSelect={setSelectedAptSeq}

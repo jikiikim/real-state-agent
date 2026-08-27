@@ -1,5 +1,17 @@
 import Image from "next/image";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -63,6 +75,25 @@ export default function Home() {
             문서 보기
           </a>
         </div>
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>테마 미리보기</CardTitle>
+            <CardDescription>shadcn 프리셋이 적용된 컴포넌트입니다.</CardDescription>
+            <CardAction>
+              <Badge>New</Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Badge variant="secondary">보증금</Badge>
+            <Badge variant="outline">월세</Badge>
+            <Badge variant="destructive">만실</Badge>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button>기본 버튼</Button>
+            <Button variant="outline">아웃라인</Button>
+            <Button variant="secondary">보조</Button>
+          </CardFooter>
+        </Card>
       </main>
     </div>
   );

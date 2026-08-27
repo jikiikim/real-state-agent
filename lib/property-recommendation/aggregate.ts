@@ -16,10 +16,10 @@ const JEONSE_COMPOUND_RATE = 0.05;
  * 최근 3년 데이터만 가져오기로 하면서 기준 기간도 3년 하나로 통일했다.
  */
 const GROWTH_LOOKBACK_YEARS = [3] as const;
-/** Top 10 정렬에 쓰는 기준 기간(년) */
+/** Top 30 정렬에 쓰는 기준 기간(년) */
 const SORT_GROWTH_YEARS = 3;
 
-const TOP_N = 10;
+const TOP_N = 30;
 
 export interface TradePoint {
   dealDate: string;
@@ -230,7 +230,7 @@ export function summarizeApartments(
 }
 
 /**
- * 다음 조건을 모두 만족하는 아파트 중 3년 매매가 상승률이 높은 순으로 Top 10을 뽑는다.
+ * 다음 조건을 모두 만족하는 아파트 중 3년 매매가 상승률이 높은 순으로 Top 30을 뽑는다.
  * - 1) 전세가 상승액이 3년 기준 연복리 5% 기대치를 넘음
  * - 2) 매매 상승률이 3년 기준 전세 상승률보다 높음
  *

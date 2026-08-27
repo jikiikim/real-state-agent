@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  CartesianGrid,
-  Label,
-  Line,
-  LineChart,
-  ReferenceArea,
-  ReferenceLine,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Label, Line, LineChart, ReferenceArea, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -19,11 +10,11 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { mergeSaleJeonseSeries, type CycleOverview } from "@/lib/market-phase";
-import { CYCLE_AREA_COLORS } from "./cycle-labels";
+import { CYCLE_AREA_COLORS, CYCLE_SHORT_LABELS, JEONSE_LINE_COLOR, SALE_LINE_COLOR } from "./cycle-labels";
 
 const chartConfig = {
-  sale: { label: "매매지수", color: "var(--color-chart-2)" },
-  jeonse: { label: "전세지수", color: "var(--color-chart-4)" },
+  sale: { label: "매매지수", color: SALE_LINE_COLOR },
+  jeonse: { label: "전세지수", color: JEONSE_LINE_COLOR },
 } satisfies ChartConfig;
 
 export function CycleChart({ cycle }: { cycle: CycleOverview }) {
@@ -37,11 +28,7 @@ export function CycleChart({ cycle }: { cycle: CycleOverview }) {
     <ChartContainer config={chartConfig} className="aspect-auto h-80 w-full">
       <LineChart data={data} margin={{ left: 12, right: 12, top: 20 }}>
         <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(value: string) => value.slice(2, 7)}
-          minTickGap={40}
-        />
+        <XAxis dataKey="date" tickFormatter={(value: string) => value.slice(2, 7)} minTickGap={40} />
         <YAxis domain={["auto", "auto"]} width={48} />
         {cycle.segments.map((segment, i) => (
           <ReferenceArea
@@ -51,45 +38,14 @@ export function CycleChart({ cycle }: { cycle: CycleOverview }) {
             fill={CYCLE_AREA_COLORS[segment.phase]}
             stroke="none"
             ifOverflow="hidden"
-          />
+          >
+            <Label value={CYCLE_SHORT_LABELS[segment.phase]} position="insideTop" fontSize={11} fill="currentColor" />
+          </ReferenceArea>
         ))}
-        {cycle.crosses.map((cross) => {
-          const crossColor = cross.type === "golden" ? "var(--color-chart-2)" : "var(--color-chart-4)";
-          return (
-            <ReferenceLine
-              key={`${cross.type}-${cross.date}`}
-              x={cross.date}
-              stroke={crossColor}
-              strokeDasharray="4 4"
-              ifOverflow="extendDomain"
-            >
-              <Label
-                value={cross.type === "golden" ? "골든크로스" : "데드크로스"}
-                position="top"
-                fontSize={10}
-                fill={crossColor}
-              />
-            </ReferenceLine>
-          );
-        })}
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent />} />
-        <Line
-          dataKey="sale"
-          type="monotone"
-          stroke="var(--color-chart-2)"
-          dot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
-        <Line
-          dataKey="jeonse"
-          type="monotone"
-          stroke="var(--color-chart-4)"
-          dot={false}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
+        <Line dataKey="sale" type="monotone" stroke={SALE_LINE_COLOR} dot={false} strokeWidth={2} isAnimationActive={false} />
+        <Line dataKey="jeonse" type="monotone" stroke={JEONSE_LINE_COLOR} dot={false} strokeWidth={2} isAnimationActive={false} />
       </LineChart>
     </ChartContainer>
   );

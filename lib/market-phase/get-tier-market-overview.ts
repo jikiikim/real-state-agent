@@ -12,7 +12,7 @@ import {
   type IndexPoint,
 } from "./phase";
 import { detectBalloonTransitions, type TierRisingTransition } from "./balloon-effect";
-import { computeCycle, type CycleSegment, type CrossEvent } from "./cycle";
+import { computeCycle, type CycleSegment } from "./cycle";
 
 export interface IndexOverview {
   /** 최근 4주 데이터가 부족하면 국면을 판단할 수 없어 null이다 */
@@ -26,7 +26,6 @@ export interface CycleOverview {
   saleSeries: IndexPoint[];
   jeonseSeries: IndexPoint[];
   segments: CycleSegment[];
-  crosses: CrossEvent[];
 }
 
 export interface TierMarketOverview {
@@ -82,7 +81,7 @@ export async function getTierMarketOverview(): Promise<TierMarketOverview[]> {
 
       const cycleSaleSeries = saleSeries.slice(-CYCLE_CHART_WEEKS);
       const cycleJeonseSeries = jeonseSeries.slice(-CYCLE_CHART_WEEKS);
-      const { segments, crosses } = computeCycle(cycleSaleSeries, cycleJeonseSeries);
+      const { segments } = computeCycle(cycleSaleSeries, cycleJeonseSeries);
 
       return {
         tier: tierDef.tier,
@@ -95,7 +94,6 @@ export async function getTierMarketOverview(): Promise<TierMarketOverview[]> {
           saleSeries: cycleSaleSeries,
           jeonseSeries: cycleJeonseSeries,
           segments,
-          crosses,
         } satisfies CycleOverview,
       };
     })

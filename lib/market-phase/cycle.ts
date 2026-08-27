@@ -1,19 +1,23 @@
-import {
-  classifyPhase,
-  computeRollingWeeklyChangeRate,
-  WEEKLY_ROLLING_WEEKS,
-  type IndexPoint,
-} from "./phase";
+import { classifyPhase, computeRollingWeeklyChangeRate, WEEKLY_ROLLING_WEEKS, type IndexPoint } from "./phase";
 
 /**
  * 매매·전세지수 관계로 정해지는 시장 사이클 4단계.
  * 1: 전세 상승, 2: 매매 전환, 3: 매매 폭등, 4: 시장 조정.
- * docs/specs/market-phase-dashboard/spec.md의 전환 규칙을 따른다.
+ * docs/specs/market-phase-dashboard/spec.md의 판별 규칙을 따른다.
+ *
+ * 매 시점을 아래 두 값의 조합으로 분류한다:
+ * - 매매지수가 전세지수보다 높은지 낮은지
+ * - 매매지수 자체의 국면(상승/하락/보합, 최근 4주 누적 기준)
+ *
+ * 1~3단계는 그 시점의 값만으로 즉시 분류된다: 매매 국면이 하락으로 전환되면
+ * 전세와의 관계와 무관하게 4단계로 본다. 그 외에는 매매<전세인 동안 1(보합/하락)·
+ * 2(상승)단계, 매매≥전세인 동안 3단계다.
+ *
+ * 4단계만 예외적으로 직전 상태를 참조한다: 매매가 전세 아래로 다시 떨어지는
+ * 데드크로스가 나기 전까지는(그 사이 하락세가 잠깐 주춤해도) 4단계를 유지하고,
+ * 데드크로스가 나는 시점에 그때의 매매 국면을 기준으로 1·2단계로 재분류한다.
  */
 export type CyclePhase = 1 | 2 | 3 | 4;
-
-/** 매매 4주 누적 증감률이 전세보다 이만큼(%p) 이상 앞서기 시작하면 3단계(과열)로 본다 */
-export const GAP_EXPANSION_THRESHOLD_PP = 1;
 
 export interface CycleSegment {
   phase: CyclePhase;
@@ -23,20 +27,8 @@ export interface CycleSegment {
   endDate: string;
 }
 
-export interface CrossEvent {
-  type: "golden" | "dead";
-  date: string;
-}
-
 export interface CycleResult {
   segments: CycleSegment[];
-  crosses: CrossEvent[];
-}
-
-function sign(n: number): -1 | 0 | 1 {
-  if (n > 0) return 1;
-  if (n < 0) return -1;
-  return 0;
 }
 
 export interface MergedIndexPoint {
@@ -64,10 +56,30 @@ export function mergeSaleJeonseSeries(
   }));
 }
 
+function classifyCyclePhase(
+  saleValue: number,
+  jeonseValue: number,
+  saleWeeklyPhase: "상승" | "하락" | "보합",
+  previousPhase: CyclePhase | null
+): CyclePhase {
+  const saleBelowJeonse = saleValue < jeonseValue;
+
+  if (previousPhase === 4) {
+    // 4단계는 데드크로스(매매가 전세 아래로 재역전)가 나기 전까지는 하락세가 잠깐
+    // 주춤해도 유지된다. 데드크로스가 나면 그 국면 그대로 1·2단계로 재분류한다.
+    if (!saleBelowJeonse) return 4;
+    return saleWeeklyPhase === "상승" ? 2 : 1;
+  }
+
+  if (saleWeeklyPhase === "하락") return 4;
+  if (saleBelowJeonse) return saleWeeklyPhase === "상승" ? 2 : 1;
+  return 3;
+}
+
 /**
- * 매매·전세지수 시계열로부터 사이클 구간과 골든/데드크로스 시점을 계산한다.
- * 두 시계열에 공통으로 존재하는 날짜만 사용한다.
- * 첫 크로스가 나타나기 전까지는 어떤 단계에도 속하지 않는다(직전 사이클 이력을 알 수 없으므로).
+ * 매매·전세지수 시계열로부터 사이클 구간을 계산한다.
+ * 최근 weeks(기본 4)주 누적 증감률을 계산할 수 있는 시점부터만 판단하므로,
+ * 앞쪽 weeks주는 어떤 단계에도 속하지 않는다.
  */
 export function computeCycle(
   saleSeries: IndexPoint[],
@@ -75,69 +87,32 @@ export function computeCycle(
   weeks: number = WEEKLY_ROLLING_WEEKS
 ): CycleResult {
   const merged = mergeSaleJeonseSeries(saleSeries, jeonseSeries);
-  const dates = merged.map((p) => p.date);
-  const commonSale: IndexPoint[] = merged.map((p) => ({ date: p.date, value: p.sale }));
-  const commonJeonse: IndexPoint[] = merged.map((p) => ({ date: p.date, value: p.jeonse }));
-
-  const crosses: CrossEvent[] = [];
   const segments: CycleSegment[] = [];
 
   let currentPhase: CyclePhase | null = null;
   let segmentStart: string | null = null;
-  let prevSign: -1 | 0 | 1 | null = null;
+  let prevDate: string | null = null;
 
-  const closeSegment = (endDate: string) => {
-    if (currentPhase !== null && segmentStart !== null) {
-      segments.push({ phase: currentPhase, startDate: segmentStart, endDate });
-    }
-  };
+  for (let i = weeks; i < merged.length; i++) {
+    const saleWindow: IndexPoint[] = merged.slice(0, i + 1).map((p) => ({ date: p.date, value: p.sale }));
+    const saleRoll = computeRollingWeeklyChangeRate(saleWindow, weeks);
+    if (saleRoll === null) continue;
 
-  for (let i = 0; i < dates.length; i++) {
-    const date = dates[i];
-    const diffSign = sign(commonSale[i].value - commonJeonse[i].value);
-    const effectiveSign: -1 | 0 | 1 = diffSign === 0 ? (prevSign ?? 0) : diffSign;
-    let justTransitioned = false;
+    const phase = classifyCyclePhase(merged[i].sale, merged[i].jeonse, classifyPhase(saleRoll), currentPhase);
 
-    if (prevSign !== null && prevSign !== 0 && effectiveSign !== 0 && effectiveSign !== prevSign) {
-      if (effectiveSign > 0) {
-        crosses.push({ type: "golden", date });
-        closeSegment(dates[i - 1]);
-        currentPhase = 2;
-        segmentStart = date;
-      } else {
-        crosses.push({ type: "dead", date });
-        closeSegment(dates[i - 1]);
-        currentPhase = 1;
-        segmentStart = date;
+    if (phase !== currentPhase) {
+      if (currentPhase !== null && segmentStart !== null && prevDate !== null) {
+        segments.push({ phase: currentPhase, startDate: segmentStart, endDate: prevDate });
       }
-      justTransitioned = true;
+      currentPhase = phase;
+      segmentStart = merged[i].date;
     }
-
-    // 이번 턴에 방금 크로스로 전환됐다면, 그 직후 조건은 다음 턴부터 평가한다.
-    // 그렇지 않으면 dates[i - 1]이 segmentStart(=date)보다 앞선 잘못된 구간이 생긴다.
-    if (!justTransitioned && currentPhase === 2) {
-      const saleRoll = computeRollingWeeklyChangeRate(commonSale.slice(0, i + 1), weeks);
-      const jeonseRoll = computeRollingWeeklyChangeRate(commonJeonse.slice(0, i + 1), weeks);
-      if (saleRoll !== null && jeonseRoll !== null && saleRoll - jeonseRoll >= GAP_EXPANSION_THRESHOLD_PP) {
-        closeSegment(dates[i - 1]);
-        currentPhase = 3;
-        segmentStart = date;
-      }
-    } else if (!justTransitioned && currentPhase === 3) {
-      const saleRoll = computeRollingWeeklyChangeRate(commonSale.slice(0, i + 1), weeks);
-      if (saleRoll !== null && classifyPhase(saleRoll) === "하락") {
-        closeSegment(dates[i - 1]);
-        currentPhase = 4;
-        segmentStart = date;
-      }
-    }
-
-    prevSign = effectiveSign;
+    prevDate = merged[i].date;
   }
 
-  if (dates.length > 0) {
-    closeSegment(dates[dates.length - 1]);
+  if (currentPhase !== null && segmentStart !== null && prevDate !== null) {
+    segments.push({ phase: currentPhase, startDate: segmentStart, endDate: prevDate });
   }
 
-  return { segments, crosses };
+  return { segments };
 }

@@ -1,4 +1,5 @@
 import type { RawTrade, RawRent } from "./molit-client";
+import { getRegionNameByLawdCode } from "./lawd-codes";
 
 /** 국민평형(전용 84㎡)으로 볼 전용면적 범위. 단지마다 83~85㎡ 사이로 조금씩 다르게 표기된다. */
 const NATIONAL_AREA_MIN = 83;
@@ -42,6 +43,10 @@ export interface ApartmentSummary {
   aptSeq: string;
   aptName: string;
   legalDongName: string;
+  /** 단지식별 API 조회에 쓰는 지번(본번 또는 본번-부번) */
+  jibun: string;
+  /** 단지식별 API 조회에 쓰는 지역명(구/시). 알 수 없으면 null. */
+  regionName: string | null;
   buildYear: number;
   /** 전용 84㎡ 최근 매매 거래가(만원). 거래 이력이 없으면 null. */
   latestArea84PriceManwon: number | null;
@@ -204,6 +209,8 @@ export function buildApartmentSummary(
     aptSeq,
     aptName: first.aptName,
     legalDongName: first.legalDongName,
+    jibun: trades[0]?.jibun ?? "",
+    regionName: trades[0] ? getRegionNameByLawdCode(trades[0].lawdCode) : null,
     buildYear: Number(first.buildYear),
     latestArea84PriceManwon: area84Trades.at(-1)?.priceManwon ?? null,
     latestArea84JeonseManwon: area84Jeonse.at(-1)?.priceManwon ?? null,

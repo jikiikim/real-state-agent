@@ -16,6 +16,8 @@ export interface RawTrade {
   floor: number;
   legalDongName: string;
   lawdCode: string;
+  /** 지번(본번-부번, 부번이 0이면 "본번"만). 단지식별 API 조회에 쓴다. */
+  jibun: string;
 }
 
 export interface RawRent {
@@ -45,6 +47,8 @@ interface MolitTradeItem {
   excluUseAr: number | string;
   floor: number | string;
   umdNm: string;
+  bonbun: string;
+  bubun: string;
 }
 
 interface MolitRentItem {
@@ -152,6 +156,13 @@ async function fetchMolit<TItem>(
   return data.response.body?.items?.item ?? [];
 }
 
+/** bonbun("0316")·bubun("0000")을 단지식별 API의 ADRES 표기("316" 또는 "316-4")로 조합한다. */
+function formatJibun(bonbun: string, bubun: string): string {
+  const bon = Number(bonbun);
+  const bu = Number(bubun);
+  return bu > 0 ? `${bon}-${bu}` : `${bon}`;
+}
+
 /** 국토교통부 아파트 매매 실거래가 상세 자료를 한 달치 가져온다. */
 export async function fetchMonthlyTrades(lawdCode: string, dealYmd: string): Promise<RawTrade[]> {
   const items = await fetchMolit<MolitTradeItem>(TRADE_URL, lawdCode, dealYmd, "매매 실거래가");
@@ -165,6 +176,7 @@ export async function fetchMonthlyTrades(lawdCode: string, dealYmd: string): Pro
     floor: Number(item.floor),
     legalDongName: item.umdNm.trim(),
     lawdCode,
+    jibun: formatJibun(item.bonbun, item.bubun),
   }));
 }
 

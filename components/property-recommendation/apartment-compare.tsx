@@ -1,7 +1,37 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatManwon, formatGrowthPercent, type ApartmentSummary } from "@/lib/property-recommendation";
 import { ApartmentPriceChart, ApartmentVolumeChart } from "./apartment-price-chart";
+import { useComplexInfo } from "./use-complex-info";
+
+function ComplexInfoSection({ apartment }: { apartment: ApartmentSummary }) {
+  const { data, loading, error } = useComplexInfo(apartment);
+
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">단지 정보를 불러오는 중입니다...</p>;
+  }
+  if (error || !data) {
+    return <p className="text-sm text-muted-foreground">단지 정보를 찾지 못했습니다.</p>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <span>
+        세대수 <span className="font-medium text-foreground">{data.unitCount.toLocaleString("ko-KR")}세대</span>
+      </span>
+      <span>
+        동수 <span className="font-medium text-foreground">{data.buildingCount}개동</span>
+      </span>
+      {data.useApprovalDate && (
+        <span>
+          사용승인일 <span className="font-medium text-foreground">{data.useApprovalDate}</span>
+        </span>
+      )}
+    </div>
+  );
+}
 
 function ApartmentCard({
   apartment,
@@ -24,6 +54,8 @@ function ApartmentCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <ComplexInfoSection apartment={apartment} />
+
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex flex-col gap-0.5">
             <span className="text-muted-foreground">최근 매매가</span>

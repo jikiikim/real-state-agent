@@ -28,22 +28,19 @@ export const JEONSE_LINE_COLOR = "#f59e0b"; // amber-500
 
 /**
  * 각 단계의 기준색(불투명). ReferenceArea fill과 요약 카드 도트는 이 색에서 파생시킨다.
- * 단계가 깊어질수록(1→4) 옅은 초록에서 짙은 초록으로 진해지는 그라데이션으로 잡는다.
+ * 색상환에서 서로 최대한 떨어뜨려 인접 단계(특히 1·2단계)도 한눈에 구별되게 한다.
  */
 export const CYCLE_BASE_COLORS: Record<CyclePhase, string> = {
-  1: "#E6F2DD",
-  2: "#B1D3B9",
-  3: "#88BDA4",
-  4: "#659287",
+  1: "rgb(168, 85, 247)", // violet — 전세 상승(관망)
+  2: "rgb(37, 99, 235)", // blue — 매매 전환(초입)
+  3: "rgb(220, 38, 38)", // red — 매매 폭등(과열)
+  4: "rgb(5, 150, 105)", // emerald — 시장 조정
 };
 
-/** ReferenceArea fill 색상. 매매/전세 라인이 배경 위에서도 보이도록 살짝 투명하게 쓴다. */
+/** ReferenceArea fill 색상(라이트/다크 모두에서 무난하되 배경 위에서도 뚜렷하도록) */
 export const CYCLE_AREA_COLORS: Record<CyclePhase, string> = {
-  1: "rgb(230 242 221 / 0.85)",
-  2: "rgb(177 211 185 / 0.85)",
-  3: "rgb(136 189 164 / 0.85)",
-  4: "rgb(101 146 135 / 0.85)",
+  1: "rgb(168 85 247 / 0.22)",
+  2: "rgb(37 99 235 / 0.22)",
+  3: "rgb(220 38 38 / 0.2)",
+  4: "rgb(5 150 105 / 0.22)",
 };
-
-/** 그래프 블록 라벨 텍스트 색. 1단계처럼 배경이 연할 때도 읽히도록 가장 짙은 톤으로 고정한다. */
-export const CYCLE_LABEL_TEXT_COLOR = "#3f5f57";

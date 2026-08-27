@@ -1,11 +1,6 @@
 import { getTierMarketOverview } from "@/lib/market-phase";
 import { TierDashboard } from "@/components/market-phase/tier-dashboard";
 
-// 매주 갱신되는 R-ONE 지수를 다루는 페이지라 빌드 타임 정적 프리렌더링 대신
-// 요청마다 서버에서 렌더링한다. 이러면 R_ONE_API_KEY가 없는 환경에서도 빌드 자체는 성공하고,
-// 개별 fetch 캐시(next.revalidate)는 그대로 유지된다.
-export const dynamic = "force-dynamic";
-
 export default async function Home() {
   const overviews = await getTierMarketOverview();
 

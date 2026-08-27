@@ -20,7 +20,7 @@ export function CycleSummary({ cycle }: { cycle: CycleOverview }) {
         >
           <div className="flex items-center gap-2">
             <span
-              className="size-2.5 shrink-0 rounded-full"
+              className="size-2.5 shrink-0 rounded-full border border-black/15"
               style={{ backgroundColor: CYCLE_BASE_COLORS[phase] }}
             />
             <span className="text-sm font-medium">{CYCLE_LABELS[phase]}</span>
